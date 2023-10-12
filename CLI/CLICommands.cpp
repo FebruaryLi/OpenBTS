@@ -514,6 +514,33 @@ static CLIStatus sendsms(int argc, char** argv, ostream& os)
 	return SUCCESS;
 }
 
+static CLIStatus sendsmspdu(int argc, char** argv, ostream& os)
+{
+        if (argc<4) return BAD_NUM_ARGS;
+
+        char *IMSI = argv[1];
+        char *srcAddr = argv[2];
+        string rest = "";
+        for (int i=3; i<argc; i++) rest = rest + argv[i];// + " ";
+
+        if (!isIMSI(IMSI)) {
+                os << "Invalid IMSI. Enter 15 digits only.";
+                return BAD_VALUE;
+        }
+
+        // We just use the IMSI, dont try to find a tmsi.
+        FullMobileId msid(IMSI);
+        Control::TranEntry *tran = Control::TranEntry::newMTSMS(
+                                                NULL,   // No SIPDialog
+                                                msid,
+                                                GSM::L3CallingPartyBCDNumber(srcAddr),
+                                                rest,                                   // message body
+                                                string("application/vnd.3gpp.sms"));  // messate content type
+        Control::gMMLayer.mmAddMT(tran);
+        os << "message submitted for delivery" << endl;
+        return SUCCESS;
+}
+
 
 /** Print current usage loads. */
 static CLIStatus printStats(int argc, char** argv, ostream& os)
@@ -1717,6 +1744,7 @@ void Parser::addCommands()
 	addCommand("shutdown", nop, "[] -- shut down via upstart OpenBTS.  If OpenBTS was not started via upstart, it is a no op.");
 	addCommand("tmsis", tmsis, tmsisHelp);
 	addCommand("sendsms", sendsms, "IMSI src# message... -- send direct SMS to IMSI on this BTS, addressed from source number src#.");
+	addCommand("sendsmspdu", sendsmspdu, "IMSI src# message... -- send direct SMS to IMSI on this BTS, addressed from source number src#.");
 	addCommand("sendsimple", sendsimple, "IMSI src# message... -- send SMS to IMSI via SIP interface, addressed from source number src#.");
 	addCommand("load", printStats, "-- print the current activity loads.");
 	addCommand("cellid", cellID, "[MCC MNC LAC CI] -- get/set location area identity (MCC, MNC, LAC) and cell ID (CI).");
