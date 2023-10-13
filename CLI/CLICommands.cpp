@@ -518,27 +518,27 @@ static CLIStatus sendsmspdu(int argc, char** argv, ostream& os)
 {
         if (argc<4) return BAD_NUM_ARGS;
 
-        char *IMSI = argv[1];
-        char *srcAddr = argv[2];
-        string rest = "";
-        for (int i=3; i<argc; i++) rest = rest + argv[i];// + " ";
+	char *IMSI = argv[1];
+	char *srcAddr = argv[2];
+	string rest = "";
+	for (int i=3; i<argc; i++) rest = rest + argv[i] + " ";
 
-        if (!isIMSI(IMSI)) {
-                os << "Invalid IMSI. Enter 15 digits only.";
-                return BAD_VALUE;
-        }
+	if (!isIMSI(IMSI)) {
+		os << "Invalid IMSI. Enter 15 digits only.";
+		return BAD_VALUE;
+	}
 
-        // We just use the IMSI, dont try to find a tmsi.
-        FullMobileId msid(IMSI);
-        Control::TranEntry *tran = Control::TranEntry::newMTSMS(
-                                                NULL,   // No SIPDialog
-                                                msid,
-                                                GSM::L3CallingPartyBCDNumber(srcAddr),
-                                                rest,                                   // message body
-                                                string("application/vnd.3gpp.sms"));  // messate content type
-        Control::gMMLayer.mmAddMT(tran);
-        os << "message submitted for delivery" << endl;
-        return SUCCESS;
+	// We just use the IMSI, dont try to find a tmsi.
+	FullMobileId msid(IMSI);
+	Control::TranEntry *tran = Control::TranEntry::newMTSMS(
+						NULL,	// No SIPDialog
+						msid,
+						GSM::L3CallingPartyBCDNumber(srcAddr),
+						rest,					// message body
+						string("text/plain"));	// messate content type
+	Control::gMMLayer.mmAddMT(tran);
+	os << "message submitted for delivery" << endl;
+	return SUCCESS;
 }
 
 
