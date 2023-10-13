@@ -516,21 +516,27 @@ static CLIStatus sendsms(int argc, char** argv, ostream& os)
 
 static CLIStatus sendsmspdu(int argc, char** argv, ostream& os)
 {
-        if (argc!=3) return BAD_NUM_ARGS;
+        if (argc<4) return BAD_NUM_ARGS;
 
-	os << "enter text to send: ";
-	char txtBuf[161];
-	cin.getline(txtBuf,160,'\n');
 	char *IMSI = argv[1];
 	char *srcAddr = argv[2];
+	string rest = "";
+	for (int i=3; i<argc; i++) rest = rest + argv[i];// + " ";
 
-	Control::TransactionEntry transaction(
-		GSM::L3MobileIdentity(IMSI),
-		GSM::L3CMServiceType::MobileTerminatedShortMessage,
-		GSM::L3CallingPartyBCDNumber(srcAddr),
-		txtBuf);
-	transaction.Q931State(Control::TransactionEntry::Paging);
-	Control::initiateMTTransaction(transaction,GSM::SDCCHType,30000);
+	if (!isIMSI(IMSI)) {
+		os << "Invalid IMSI. Enter 15 digits only.";
+		return BAD_VALUE;
+	}
+
+	// We just use the IMSI, dont try to find a tmsi.
+	FullMobileId msid(IMSI);
+	Control::TranEntry *tran = Control::TranEntry::newMTSMS(
+						NULL,	// No SIPDialog
+						msid,
+						GSM::L3CallingPartyBCDNumber(srcAddr),
+						rest,					// message body
+						string("application/vnd.3gpp.sms"));	// messate content type
+	Control::gMMLayer.mmAddMT(tran);
 	os << "message submitted for delivery" << endl;
 	return SUCCESS;
 }
